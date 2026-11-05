@@ -128,7 +128,7 @@ router.post('/google', async (req: Request, res: Response): Promise<void> => {
     if (tokenToVerify) {
       try {
         const verifyRes = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${tokenToVerify}`);
-        const googlePayload = await verifyRes.json();
+        const googlePayload = (await verifyRes.json()) as any;
         if (googlePayload.email) {
           email = googlePayload.email;
           name = googlePayload.name || email.split('@')[0];
@@ -202,7 +202,7 @@ router.post('/google/code', async (req: Request, res: Response): Promise<void> =
       }),
     });
 
-    const tokenData = await tokenResponse.json();
+    const tokenData = (await tokenResponse.json()) as any;
 
     if (!tokenData.access_token) {
       console.error('Google token exchange error:', tokenData);
@@ -217,7 +217,7 @@ router.post('/google/code', async (req: Request, res: Response): Promise<void> =
       headers: { Authorization: `Bearer ${tokenData.access_token}` },
     });
 
-    const profile = await profileResponse.json();
+    const profile = (await profileResponse.json()) as any;
 
     if (!profile.email) {
       res.status(400).json({ success: false, message: 'Google account profile does not contain an email.' });
@@ -312,7 +312,7 @@ router.get('/google/callback', async (req: Request, res: Response): Promise<void
       }),
     });
 
-    const tokenData = await tokenResponse.json();
+    const tokenData = (await tokenResponse.json()) as any;
 
     if (!tokenData.access_token) {
       console.error('Google token exchange error:', tokenData);
@@ -325,7 +325,7 @@ router.get('/google/callback', async (req: Request, res: Response): Promise<void
       headers: { Authorization: `Bearer ${tokenData.access_token}` },
     });
 
-    const profile = await profileResponse.json();
+    const profile = (await profileResponse.json()) as any;
 
     if (!profile.email) {
       res.redirect(`${clientUrl}/login?error=profile_email_missing`);
