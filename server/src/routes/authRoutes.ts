@@ -121,7 +121,23 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
 // Google Social Sign-in
 router.post('/google', async (req: Request, res: Response): Promise<void> => {
   try {
-    const { name, email, photoURL } = req.body;
+    let { name, email, photoURL, credential, id_token } = req.body;
+
+    // If an ID token / credential from Google Sign-In is provided, verify it directly with Google
+    const tokenToVerify = credential || id_token;
+    if (tokenToVerify) {
+      try {
+        const verifyRes = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${tokenToVerify}`);
+        const googlePayload = await verifyRes.json();
+        if (googlePayload.email) {
+          email = googlePayload.email;
+          name = googlePayload.name || email.split('@')[0];
+          photoURL = googlePayload.picture;
+        }
+      } catch (verifyErr) {
+        console.warn('Google tokeninfo verification failed, using provided payload:', verifyErr);
+      }
+    }
 
     if (!email) {
       res.status(400).json({ success: false, message: 'Google account email is required.' });
@@ -159,6 +175,86 @@ router.post('/google', async (req: Request, res: Response): Promise<void> => {
   } catch (error: any) {
     console.error('Google Auth error:', error);
     res.status(500).json({ success: false, message: 'Failed to authenticate with Google.', error: error.message });
+  }
+});
+
+// POST /api/auth/google/code - Exchange Google authorization code directly from frontend
+router.post('/google/code', async (req: Request, res: Response): Promise<void> => {
+  const { code, redirectUri } = req.body;
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+
+  if (!code) {
+    res.status(400).json({ success: false, message: 'Google authorization code is required.' });
+    return;
+  }
+
+  try {
+    const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        code,
+        client_id: clientId || '',
+        client_secret: clientSecret || '',
+        redirect_uri: redirectUri || 'http://localhost:5000/api/auth/google/callback',
+        grant_type: 'authorization_code',
+      }),
+    });
+
+    const tokenData = await tokenResponse.json();
+
+    if (!tokenData.access_token) {
+      console.error('Google token exchange error:', tokenData);
+      res.status(400).json({
+        success: false,
+        message: tokenData.error_description || 'Failed to exchange Google authorization code.'
+      });
+      return;
+    }
+
+    const profileResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+      headers: { Authorization: `Bearer ${tokenData.access_token}` },
+    });
+
+    const profile = await profileResponse.json();
+
+    if (!profile.email) {
+      res.status(400).json({ success: false, message: 'Google account profile does not contain an email.' });
+      return;
+    }
+
+    let user = await User.findOne({ email: profile.email.toLowerCase() });
+
+    if (!user) {
+      user = await User.create({
+        name: profile.name || profile.email.split('@')[0],
+        email: profile.email.toLowerCase(),
+        photoURL: profile.picture || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80',
+        role: 'creator',
+      });
+    }
+
+    const tokenPayload = {
+      userId: user._id.toString(),
+      email: user.email,
+      name: user.name,
+      photoURL: user.photoURL,
+      role: user.role || 'creator',
+    };
+
+    const token = generateToken(tokenPayload);
+    setTokenCookie(res, token);
+
+    res.status(200).json({
+      success: true,
+      message: 'Signed in with Google successfully.',
+      user: tokenPayload,
+      token,
+    });
+  } catch (err: any) {
+    console.error('Google code exchange error:', err);
+    res.status(500).json({ success: false, message: 'Internal server error during Google auth.', error: err.message });
   }
 });
 

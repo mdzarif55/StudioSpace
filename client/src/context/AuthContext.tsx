@@ -31,15 +31,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const checkSession = async () => {
     try {
-      // Catch Google OAuth redirect token from URL if present
       if (typeof window !== 'undefined') {
         const params = new URLSearchParams(window.location.search);
+
+        // 1. Check if token returned from server-side callback
         const authTokenFromUrl = params.get('auth_token');
         if (authTokenFromUrl) {
           setAuthToken(authTokenFromUrl);
           const cleanUrl = window.location.pathname;
           window.history.replaceState({}, document.title, cleanUrl);
           toast.success('Signed in with Google successfully!');
+        }
+
+        // 2. Check if authorization code returned from client-side redirect
+        const codeFromUrl = params.get('code');
+        if (codeFromUrl) {
+          const cleanUrl = window.location.pathname;
+          window.history.replaceState({}, document.title, cleanUrl);
+          try {
+            const redirectUri = window.location.origin + cleanUrl;
+            const res = await fetchAPI('/auth/google/code', {
+              method: 'POST',
+              body: JSON.stringify({ code: codeFromUrl, redirectUri }),
+            });
+            if (res.success && res.user) {
+              setUser(res.user);
+              if (res.token) setAuthToken(res.token);
+              localStorage.setItem('studiospace_user', JSON.stringify(res.user));
+              toast.success(`Welcome ${res.user.name}! Signed in with Google.`);
+              return;
+            }
+          } catch (codeErr: any) {
+            console.error('Google code auth error:', codeErr);
+          }
         }
       }
 
