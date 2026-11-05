@@ -119,41 +119,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const loginWithGoogle = async (
-    email = 'marcus.creator@gmail.com',
-    name = 'Marcus Sterling',
-    photoURL = 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400&auto=format&fit=crop&q=80'
-  ): Promise<boolean> => {
+  const loginWithGoogle = async (): Promise<boolean> => {
     try {
       setIsLoading(true);
 
-      // 1. Check if real Google OAuth 2.0 URL is configured on the backend
-      try {
-        const res = await fetchAPI('/auth/google/url');
-        if (res.success && res.url) {
-          window.location.href = res.url;
-          return true;
-        }
-      } catch {
-        // Fallback if client ID is pending configuration
-      }
-
-      // 2. Direct fallback authentication
-      const res = await fetchAPI('/auth/google', {
-        method: 'POST',
-        body: JSON.stringify({ email, name, photoURL }),
-      });
-
-      if (res.success && res.user) {
-        setUser(res.user);
-        if (res.token) setAuthToken(res.token);
-        localStorage.setItem('studiospace_user', JSON.stringify(res.user));
-        toast.success(`Signed in as ${res.user.name}`);
+      // Call backend to get original Google OAuth 2.0 Consent URL
+      const res = await fetchAPI('/auth/google/url');
+      if (res.success && res.url) {
+        // Redirect directly to official Google Accounts login screen
+        window.location.href = res.url;
         return true;
+      } else {
+        toast.error(res.message || 'Google Client ID is missing in server/.env');
+        return false;
       }
-      return false;
     } catch (err: any) {
-      toast.error(err.message || 'Google authentication failed.');
+      toast.error(err.message || 'Failed to initiate Google authentication.');
       return false;
     } finally {
       setIsLoading(false);
