@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+client/node_modules/
+server/node_modules/
+
+# Next.js build
+.next/
+client/.next/
+out/
+client/out/
+
+# TypeScript / Server build
+dist/
+server/dist/
+
+# Environment variables
+.env
+.env.local
+server/.env
+client/.env.local
+
+# OS
+.DS_Store
+Thumbs.db
+*.pem
+*.git_backup
+.git_backup
+.vscode/
