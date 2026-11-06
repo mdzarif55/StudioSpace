@@ -12,7 +12,12 @@ const UserSchema = new Schema<UserDocument>(
       type: String, 
       default: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80' 
     },
-    role: { type: String, enum: ['creator', 'host', 'admin'], default: 'creator' }
+    role: { type: String, enum: ['creator', 'host', 'admin'], default: 'creator' },
+    phone: { type: String, default: '' },
+    location: { type: String, default: '' },
+    bio: { type: String, default: '' },
+    website: { type: String, default: '' },
+    instagram: { type: String, default: '' }
   },
   { timestamps: true }
 );

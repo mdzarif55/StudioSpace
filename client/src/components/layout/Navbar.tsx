@@ -158,6 +158,15 @@ export const Navbar: React.FC = () => {
 
                   <div className="py-1">
                     <Link
+                      href="/profile"
+                      onClick={() => setDropdownOpen(false)}
+                      className="flex items-center gap-3 px-4 py-2.5 text-sm text-zinc-700 dark:text-zinc-200 hover:bg-orange-50 dark:hover:bg-orange-950/20 hover:text-orange-600 transition-colors"
+                    >
+                      <UserIcon className="w-4 h-4 text-zinc-400" />
+                      My Profile
+                    </Link>
+
+                    <Link
                       href="/dashboard"
                       onClick={() => setDropdownOpen(false)}
                       className="flex items-center gap-3 px-4 py-2.5 text-sm text-zinc-700 dark:text-zinc-200 hover:bg-orange-50 dark:hover:bg-orange-950/20 hover:text-orange-600 transition-colors"
@@ -262,6 +271,14 @@ export const Navbar: React.FC = () => {
                 </div>
 
                 <div className="grid grid-cols-2 gap-2 pt-2">
+                  <Link
+                    href="/profile"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center gap-2 p-2.5 rounded-xl bg-zinc-100 dark:bg-zinc-900 text-sm font-medium text-zinc-800 dark:text-zinc-200"
+                  >
+                    <UserIcon className="w-4 h-4 text-orange-500" />
+                    My Profile
+                  </Link>
                   <Link
                     href="/dashboard"
                     onClick={() => setMobileMenuOpen(false)}

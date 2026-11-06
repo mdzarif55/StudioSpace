@@ -11,6 +11,12 @@ export interface User {
   email: string;
   photoURL?: string;
   role?: string;
+  phone?: string;
+  location?: string;
+  bio?: string;
+  website?: string;
+  instagram?: string;
+  createdAt?: string;
 }
 
 export interface Studio {

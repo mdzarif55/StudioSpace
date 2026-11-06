@@ -13,6 +13,7 @@ interface AuthContextType {
   loginWithGoogle: (email?: string, name?: string, photoURL?: string) => Promise<boolean>;
   logout: () => Promise<void>;
   checkSession: () => Promise<void>;
+  updateUserProfile: (data: Partial<User> & { currentPassword?: string; newPassword?: string }) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -23,6 +24,7 @@ const AuthContext = createContext<AuthContextType>({
   loginWithGoogle: async () => false,
   logout: async () => {},
   checkSession: async () => {},
+  updateUserProfile: async () => false,
 });
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -176,6 +178,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const updateUserProfile = async (
+    data: Partial<User> & { currentPassword?: string; newPassword?: string }
+  ): Promise<boolean> => {
+    try {
+      const res = await fetchAPI('/auth/profile', {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      });
+
+      if (res.success && res.user) {
+        setUser(res.user);
+        if (res.token) setAuthToken(res.token);
+        localStorage.setItem('studiospace_user', JSON.stringify(res.user));
+        toast.success(res.message || 'Profile updated successfully!');
+        return true;
+      }
+      return false;
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to update profile.');
+      return false;
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -186,6 +211,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         loginWithGoogle,
         logout,
         checkSession,
+        updateUserProfile,
       }}
     >
       {children}

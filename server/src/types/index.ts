@@ -5,6 +5,11 @@ export interface IUser {
   password?: string;
   photoURL?: string;
   role?: 'creator' | 'host' | 'admin';
+  phone?: string;
+  location?: string;
+  bio?: string;
+  website?: string;
+  instagram?: string;
   createdAt?: Date;
   updatedAt?: Date;
 }

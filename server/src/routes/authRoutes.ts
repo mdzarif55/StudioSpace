@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import { User } from '../models/User.js';
+import { Studio } from '../models/Studio.js';
 import { authenticateToken, AuthenticatedRequest, generateToken, setTokenCookie } from '../middleware/auth.js';
 
 const router = Router();
@@ -384,11 +385,134 @@ router.get('/me', authenticateToken, async (req: AuthenticatedRequest, res: Resp
         name: user.name,
         email: user.email,
         photoURL: user.photoURL,
-        role: user.role
+        role: user.role,
+        phone: user.phone || '',
+        location: user.location || '',
+        bio: user.bio || '',
+        website: user.website || '',
+        instagram: user.instagram || '',
+        createdAt: user.createdAt,
       }
     });
   } catch (error: any) {
     res.status(500).json({ success: false, message: 'Failed to verify session.', error: error.message });
+  }
+});
+
+// Update Profile
+router.put('/profile', authenticateToken, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    if (!req.user) {
+      res.status(401).json({ success: false, message: 'Not authenticated.' });
+      return;
+    }
+
+    const {
+      name,
+      photoURL,
+      phone,
+      location,
+      bio,
+      website,
+      instagram,
+      role,
+      currentPassword,
+      newPassword,
+    } = req.body;
+
+    const user = await User.findById(req.user.userId);
+    if (!user) {
+      res.status(404).json({ success: false, message: 'User not found.' });
+      return;
+    }
+
+    // Optional password change
+    if (newPassword) {
+      if (user.password) {
+        if (!currentPassword) {
+          res.status(400).json({ success: false, message: 'Current password is required to change password.' });
+          return;
+        }
+        const isMatch = await bcrypt.compare(currentPassword, user.password);
+        if (!isMatch) {
+          res.status(400).json({ success: false, message: 'Current password does not match.' });
+          return;
+        }
+      }
+
+      if (newPassword.length < 6) {
+        res.status(400).json({ success: false, message: 'Password must be at least 6 characters long.' });
+        return;
+      }
+      if (!hasUppercase.test(newPassword)) {
+        res.status(400).json({ success: false, message: 'Password must contain at least one uppercase letter.' });
+        return;
+      }
+      if (!hasLowercase.test(newPassword)) {
+        res.status(400).json({ success: false, message: 'Password must contain at least one lowercase letter.' });
+        return;
+      }
+
+      const salt = await bcrypt.genSalt(10);
+      user.password = await bcrypt.hash(newPassword, salt);
+    }
+
+    if (name && name.trim()) user.name = name.trim();
+    if (photoURL !== undefined) user.photoURL = photoURL.trim();
+    if (phone !== undefined) user.phone = phone.trim();
+    if (location !== undefined) user.location = location.trim();
+    if (bio !== undefined) user.bio = bio.trim();
+    if (website !== undefined) user.website = website.trim();
+    if (instagram !== undefined) user.instagram = instagram.trim();
+    if (role && ['creator', 'host', 'admin'].includes(role)) {
+      user.role = role;
+    }
+
+    await user.save();
+
+    // Synchronize owner avatar and owner name on studios if updated
+    if (name || photoURL) {
+      await Studio.updateMany(
+        { ownerEmail: user.email },
+        {
+          ...(name ? { ownerName: user.name } : {}),
+          ...(photoURL ? { ownerAvatar: user.photoURL } : {}),
+        }
+      ).catch(() => {});
+    }
+
+    const tokenPayload = {
+      userId: user._id.toString(),
+      email: user.email,
+      name: user.name,
+      photoURL: user.photoURL,
+      role: user.role || 'creator',
+    };
+
+    const token = generateToken(tokenPayload);
+    setTokenCookie(res, token);
+
+    res.status(200).json({
+      success: true,
+      message: 'Profile updated successfully!',
+      user: {
+        userId: user._id.toString(),
+        name: user.name,
+        email: user.email,
+        photoURL: user.photoURL,
+        role: user.role,
+        phone: user.phone || '',
+        location: user.location || '',
+        bio: user.bio || '',
+        website: user.website || '',
+        instagram: user.instagram || '',
+        createdAt: user.createdAt,
+      },
+      token,
+    });
+  } catch (error: any) {
+    console.error('Profile update error:', error);
+    res.status(500).json({ success: false, message: 'Failed to update profile.', error: error.message });
   }
 });
 
