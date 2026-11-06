@@ -1,7 +1,7 @@
 # StudioSpace — Peer-to-Peer Creative Workspace & Production Studio Sharing Platform
 
-> **Live Production Deployment:** [https://studiospace-app.vercel.app](https://studiospace-app.vercel.app) *(Deploy URL placeholder / configurable in Vercel or Render)*  
-> **Backend API Service:** [https://studiospace-api.onrender.com](https://studiospace-api.onrender.com) *(Configurable for production deployment)*
+> **Live Production Deployment:** [https://studio-space-eosin.vercel.app](https://studio-space-eosin.vercel.app)  
+> **Backend API Service:** [https://studio-space-backend-six.vercel.app](https://studio-space-backend-six.vercel.app)
 
 ---
 
@@ -12,6 +12,7 @@ StudioSpace is a high-performance peer-to-peer marketplace engineered specifical
 ### Key Highlights & Features:
 - 🎬 **Dynamic Hero & Featured Studios (`.limit(6)`):** High-impact interactive hero slider with real-time dynamic studio fetching from MongoDB, showcasing top-rated creative spaces with category badges, hourly rates, and ratings.
 - ⚡ **Interactive Category Filtering & Exploration:** Deep exploration directory allowing creators to filter across Photo Studios, Film Stages, Podcast Lounges, Music Suites, and Art Workshops, with live search and price sorting.
+- 👤 **Creator Profile & Account Customization:** Dedicated `/profile` hub with real-time stats (bookings, hosted spaces, wishlist count), customizable creative bio, contact details, social/portfolio links, avatar preset pickers, and interactive password show/hide eye toggles across all authentication views.
 - 🛡️ **Challenge 1 — JWT Security with HTTPOnly Cookies:** Robust authentication where mutations (`POST /api/studios`, `DELETE /api/studios/:id`, `POST /api/bookings`) are guarded by JWT tokens stored securely in HTTPOnly cookies, rejecting unauthorized requests with `401 Unauthorized`.
 - ⏱️ **Challenge 2 — Double-Booking Collision Prevention:** Strict server-side collision algorithm verifying time slot overlaps (`newStart < existingEnd && newEnd > existingStart`) on the same shoot date against existing Confirmed/Pending bookings, rejecting collisions with clear descriptive alerts.
 - 🌓 **Challenge 3 — Full-System Light & Dark Mode:** Global theme toggler with instantaneous transition across all cards, navigation, modals, and typography, persisted in browser `localStorage`.
